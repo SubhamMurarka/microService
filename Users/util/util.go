@@ -1,12 +1,11 @@
 package util
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
+	"github.com/SubhamMurarka/microService/Users/config"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,7 +17,7 @@ type tokenCreateParams struct {
 	jwt.StandardClaims
 }
 
-var SECRET_KEY string = os.Getenv("SECRET_KEY")
+var SECRET_KEY string = config.Config.JwtSecret
 
 func GenerateAllTokens(userID string, username string, email string) (signedToken string, err error) {
 	claims := &tokenCreateParams{
@@ -38,32 +37,6 @@ func GenerateAllTokens(userID string, username string, email string) (signedToke
 	}
 
 	return token, err
-}
-
-func ValidateToken(signedToken string) (*tokenCreateParams, error) {
-	token, err := jwt.ParseWithClaims(
-		signedToken,
-		&tokenCreateParams{},
-		func(token *jwt.Token) (interface{}, error) {
-			return []byte(SECRET_KEY), nil
-		},
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	claims, ok := token.Claims.(*tokenCreateParams)
-
-	if !ok {
-		return nil, errors.New("the token is invalid")
-	}
-
-	if claims.ExpiresAt < time.Now().UTC().Unix() {
-		return nil, errors.New("token is expired")
-	}
-
-	return claims, nil
 }
 
 func HashPassword(password string) (string, error) {

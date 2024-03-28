@@ -1,14 +1,17 @@
 package user_handler
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/SubhamMurarka/microService/Users/config"
 	"github.com/SubhamMurarka/microService/Users/models"
 	"github.com/SubhamMurarka/microService/Users/user_service"
-	"github.com/SubhamMurarka/microService/Users/util"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt"
 )
 
 type Handler struct {
@@ -51,13 +54,15 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).JSON(u)
 }
 
-func Authenticate(c *fiber.Ctx) error {
-	clientToken := c.Get("token")
-	if clientToken == "" {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": "No Authorisation header provided"})
+var SECRET_KEY string = config.Config.JwtSecret
+
+func Authorise(c *fiber.Ctx) error {
+	var clientToken models.AuthReq
+	if err := c.BodyParser(&clientToken); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 
-	claims, err := util.ValidateToken(clientToken)
+	claims, err := ValidateToken(clientToken.Token)
 	if err != nil {
 		if strings.Contains(err.Error(), "token is expired") {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Token is Expired"})
@@ -66,8 +71,37 @@ func Authenticate(c *fiber.Ctx) error {
 		}
 	}
 
-	c.Locals("email", claims.Email)
-	c.Locals("username", claims.Username)
-	c.Locals("userid", claims.UserID)
-	return c.Next()
+	res := models.AuthRes{
+		ID:       claims.UserID,
+		Username: claims.Username,
+		Email:    claims.Email,
+	}
+
+	return c.Status(http.StatusOK).JSON(res)
+}
+
+func ValidateToken(signedToken string) (*models.TokenCreateParams, error) {
+	token, err := jwt.ParseWithClaims(
+		signedToken,
+		&models.TokenCreateParams{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(SECRET_KEY), nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*models.TokenCreateParams)
+
+	if !ok {
+		return nil, errors.New("the token is invalid")
+	}
+
+	if claims.ExpiresAt < time.Now().UTC().Unix() {
+		return nil, errors.New("token is expired")
+	}
+
+	return claims, nil
 }

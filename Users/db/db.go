@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/SubhamMurarka/microService/Users/config"
 	_ "github.com/go-sql-driver/mysql"
-	"honnef.co/go/tools/config"
 )
 
 type MysqlConfig struct {
@@ -21,20 +21,19 @@ type Database struct {
 	DB *sql.DB
 }
 
-var cfg MysqlConfig
+var Cfg MysqlConfig
 
 func init() {
-	cfg = MysqlConfig{
-		Host:     config.Config.Host,
-		Port:     config.Config.Port,
-		User:     config.Config.User,
-		Password: config.Config.Password,
-		Database: config.Config.Database,
+	Cfg = MysqlConfig{
+		Host:     config.Config.MysqlHost,
+		Port:     config.Config.MysqlPort,
+		Password: config.Config.MysqlPassword,
+		Database: config.Config.MysqlDatabase,
 	}
 }
 
 func NewDatabase() (*Database, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+	dsn := fmt.Sprintf("root:%s@tcp(%s:%s)/%s", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
