@@ -12,6 +12,6 @@ type Product struct {
 }
 
 type PurchaseReq struct {
-	ID     uuid.UUID `json:"id"`
-	UserID string    `json:"userid"`
+	ID     []uuid.UUID `json:"id"`
+	UserID string      `json:"userid"`
 }

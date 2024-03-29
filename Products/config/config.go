@@ -11,6 +11,7 @@ type AppConfig struct {
 	PostgresPassword  string
 	PostgresDatabase  string
 	ServerPortProduct string
+	ServerPortUser    string
 	KafkaHost         string
 	KafkaPort         string
 	KafkaTopic        string
@@ -29,6 +30,7 @@ func init() {
 		KafkaHost:         os.Getenv("KAFKA_HOST"),
 		KafkaPort:         os.Getenv("KAFKA_PORT"),
 		KafkaTopic:        os.Getenv("KAFKA_TOPIC"),
+		ServerPortUser:    os.Getenv("SERVER_PORT_USER"),
 	}
 }
 

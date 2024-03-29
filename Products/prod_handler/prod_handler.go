@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/SubhamMurarka/microService/Products/auth"
 	"github.com/SubhamMurarka/microService/Products/models"
 	"github.com/SubhamMurarka/microService/Products/prod_service"
 	"github.com/gofiber/fiber/v2"
@@ -88,6 +89,7 @@ func (h *Handler) GetAllProducts(c *fiber.Ctx) error {
 
 func (h *Handler) Purchase(c *fiber.Ctx) error {
 	var req models.PurchaseReq
+	req.UserID = auth.Authres.UserID
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}

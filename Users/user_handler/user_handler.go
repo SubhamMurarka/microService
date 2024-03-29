@@ -57,12 +57,11 @@ func (h *Handler) Login(c *fiber.Ctx) error {
 var SECRET_KEY string = config.Config.JwtSecret
 
 func Authorise(c *fiber.Ctx) error {
-	var clientToken models.AuthReq
-	if err := c.BodyParser(&clientToken); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	token := c.Query("token")
+	if token == "" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Token is missing"})
 	}
-
-	claims, err := ValidateToken(clientToken.Token)
+	claims, err := ValidateToken(token)
 	if err != nil {
 		if strings.Contains(err.Error(), "token is expired") {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Token is Expired"})

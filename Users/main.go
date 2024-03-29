@@ -21,6 +21,8 @@ func main() {
 		log.Fatalf("could not initialiaze database connection: %s", err)
 	}
 
+	defer dbConn.Close()
+
 	runDBMigration()
 
 	Rep := user_repo.NewRepository(dbConn.GetDB())
@@ -30,7 +32,7 @@ func main() {
 	app := fiber.New()
 	app.Post("/signup", userHandler.CreateUser)
 	app.Post("/login", userHandler.Login)
-	app.Post("/auth", user_handler.Authorise)
+	app.Get("/auth", user_handler.Authorise)
 	port := ":" + config.Config.ServerPortUser
 
 	if err = app.Listen(port); err != nil {

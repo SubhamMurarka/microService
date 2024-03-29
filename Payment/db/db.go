@@ -5,13 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/SubhamMurarka/microService/Users/config"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/SubhamMurarka/microService/Payment/config"
+	_ "github.com/lib/pq"
 )
 
-type MysqlConfig struct {
+type PostgresConfig struct {
 	Host     string
 	Port     string
+	User     string
 	Password string
 	Database string
 }
@@ -20,20 +21,21 @@ type Database struct {
 	DB *sql.DB
 }
 
-var Cfg MysqlConfig
+var Cfg PostgresConfig
 
 func init() {
-	Cfg = MysqlConfig{
-		Host:     config.Config.MysqlHost,
-		Port:     config.Config.MysqlPort,
-		Password: config.Config.MysqlPassword,
-		Database: config.Config.MysqlDatabase,
+	Cfg = PostgresConfig{
+		Host:     config.Config.PostgresHost,
+		Port:     config.Config.PostgresPort,
+		Password: config.Config.PostgresPassword,
+		User:     config.Config.PostgresUser,
+		Database: config.Config.PostgresDatabase,
 	}
 }
 
 func NewDatabase() (*Database, error) {
-	dsn := fmt.Sprintf("mysql://root:%s@tcp(%s:%s)/%s", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
-	db, err := sql.Open("mysql", dsn)
+	dsn := fmt.Sprintf("postgres://root:%s@%s:%s/%s?sslmode=disable", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}
