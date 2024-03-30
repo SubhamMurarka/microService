@@ -28,13 +28,12 @@ func init() {
 		Host:     config.Config.PostgresHost,
 		Port:     config.Config.PostgresPort,
 		Password: config.Config.PostgresPassword,
-		User:     config.Config.PostgresUser,
 		Database: config.Config.PostgresDatabase,
 	}
 }
 
 func NewDatabase() (*Database, error) {
-	dsn := fmt.Sprintf("postgres://root:%s@%s:%s/%s?sslmode=disable", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
+	dsn := fmt.Sprintf("postgres://postgres:%s@%s:%s/%s?sslmode=disable", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
 	fmt.Println(dsn)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {

@@ -33,6 +33,7 @@ func init() {
 
 func NewDatabase() (*Database, error) {
 	dsn := fmt.Sprintf("root:%s@tcp(%s:%s)/%s", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
+	fmt.Println(dsn)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		fmt.Println("not connecting to database : ", err)
