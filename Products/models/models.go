@@ -1,17 +1,27 @@
 package models
 
 import (
-	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Product struct {
-	ID   uuid.UUID `json:"id" bson:"_id"`
-	Name string    `json:"name" bson:"name"`
+	ID   primitive.ObjectID `json:"id" bson:"_id"`
+	Name string             `json:"name" bson:"name"`
+	// Description string `json:"description" bson:"description"`
+	Price string `json:"price" bson:"price"`
+}
+
+type CreateProduct struct {
+	Name string `json:"name" bson:"name"`
 	// Description string `json:"description" bson:"description"`
 	Price string `json:"price" bson:"price"`
 }
 
 type PurchaseReq struct {
-	ID     []uuid.UUID `json:"id"`
-	UserID string      `json:"userid"`
+	ProductID []string `json:"product_id"`
+}
+
+type KafkaEvent struct {
+	UserID    string   `json:"user_id"`
+	ProductID []string `json:"product_id"`
 }

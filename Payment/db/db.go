@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type PostgresConfig struct {
+type Config struct {
 	Host     string
 	Port     string
 	User     string
@@ -21,10 +21,10 @@ type Database struct {
 	DB *sql.DB
 }
 
-var Cfg PostgresConfig
+var Cfg Config
 
 func init() {
-	Cfg = PostgresConfig{
+	Cfg = Config{
 		Host:     config.Config.PostgresHost,
 		Port:     config.Config.PostgresPort,
 		Password: config.Config.PostgresPassword,
@@ -35,6 +35,7 @@ func init() {
 
 func NewDatabase() (*Database, error) {
 	dsn := fmt.Sprintf("postgres://root:%s@%s:%s/%s?sslmode=disable", Cfg.Password, Cfg.Host, Cfg.Port, Cfg.Database)
+	fmt.Println(dsn)
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err

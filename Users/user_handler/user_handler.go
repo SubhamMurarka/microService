@@ -2,6 +2,7 @@ package user_handler
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -61,11 +62,15 @@ func Authorise(c *fiber.Ctx) error {
 	if token == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Token is missing"})
 	}
+	fmt.Println(token)
 	claims, err := ValidateToken(token)
 	if err != nil {
+		fmt.Println("error occured: ", err)
 		if strings.Contains(err.Error(), "token is expired") {
+			fmt.Println(err)
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Token is Expired"})
 		} else {
+			fmt.Println(err)
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 		}
 	}

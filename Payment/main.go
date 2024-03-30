@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -16,8 +17,9 @@ import (
 	"github.com/SubhamMurarka/microService/Payment/models"
 	"github.com/SubhamMurarka/microService/Payment/pay_repo"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,11 +30,11 @@ func main() {
 
 	defer dbConn.Close()
 
-	runDBMigration()
+	runDBMigration(dbConn.DB)
 	repo := pay_repo.NewRepository(dbConn.DB)
 
 	consumer, _ := kafka.ConnectConsumer()
-	PartitionConsumer, err := consumer.ConsumePartition(config.Config.KafkaTopic, 0, sarama.OffsetOldest)
+	PartitionConsumer, err := consumer.ConsumePartition(config.Config.KafkaTopic, 0, sarama.OffsetNewest)
 	if err != nil {
 		log.Fatalf("PartitionConsumer not created : %s", err)
 
@@ -55,11 +57,9 @@ func main() {
 					fmt.Println("Error parsing message:", err)
 					continue
 				}
-				if id, err := repo.CreatePayment(context.TODO(), &payment); err != nil {
+				if err := repo.CreatePayment(context.TODO(), &payment); err != nil {
 					fmt.Println("Error writing to database:", err)
 					continue
-				} else {
-					fmt.Println("payment done with id : ", id)
 				}
 			case <-sigchan:
 				fmt.Println("Interrupt is detected")
@@ -77,14 +77,14 @@ func main() {
 	}
 }
 
-func runDBMigration() {
-	dsn := fmt.Sprintf("postgres://root:%s@%s:%s/%s?sslmode=disable", config.Config.PostgresPassword, config.Config.PostgresHost, config.Config.PostgresPort, config.Config.PostgresDatabase)
-	migrationsPath := "file://db/migration"
-
-	m, err := migrate.New(
-		dsn,
-		migrationsPath,
-	)
+func runDBMigration(db *sql.DB) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatal("error creating instance : ", err)
+	}
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://db/migration",
+		"postgres", driver)
 	if err != nil {
 		log.Fatal("cannot create new migrate instance", err)
 	}

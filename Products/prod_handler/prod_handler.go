@@ -22,7 +22,7 @@ func NewHandler(s prod_service.Service) *Handler {
 }
 
 func (h *Handler) CreateProduct(c *fiber.Ctx) error {
-	var p models.Product
+	var p models.CreateProduct
 	if err := c.BodyParser(&p); err != nil {
 		fmt.Println("Error parsing request body for creating product : ", err)
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
@@ -49,7 +49,7 @@ func (h *Handler) GetProduct(c *fiber.Ctx) error {
 
 func (h *Handler) UpdateProduct(c *fiber.Ctx) error {
 	productID := c.Params("id")
-	var updateProduct models.Product
+	var updateProduct models.CreateProduct
 	if err := c.BodyParser(&updateProduct); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -89,11 +89,14 @@ func (h *Handler) GetAllProducts(c *fiber.Ctx) error {
 
 func (h *Handler) Purchase(c *fiber.Ctx) error {
 	var req models.PurchaseReq
-	req.UserID = auth.Authres.UserID
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
-	res, err := h.Service.Purchase(c.Context(), &req)
+	event := models.KafkaEvent{
+		UserID:    auth.Authres.UserID,
+		ProductID: req.ProductID,
+	}
+	res, err := h.Service.Purchase(c.Context(), &event)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"strconv"
-	"time"
 
 	"github.com/SubhamMurarka/microService/Users/models"
 	"github.com/SubhamMurarka/microService/Users/user_repo"
@@ -13,7 +12,6 @@ import (
 
 type service struct {
 	user_repo.Repository
-	timeout time.Duration
 }
 
 type Service interface {
@@ -24,19 +22,16 @@ type Service interface {
 func NewService(repository user_repo.Repository) Service {
 	return &service{
 		repository,
-		time.Duration(8) * time.Second,
 	}
 }
 
 func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*models.CreateUserRes, error) {
-	ctx, cancel := context.WithTimeout(c, s.timeout)
-	defer cancel()
 
 	if req.Email == "" || req.Username == "" {
 		return nil, errors.New("email and username cannot be empty")
 	}
 
-	exists, err := s.Repository.FindUserByEmail(ctx, req.Email)
+	exists, err := s.Repository.FindUserByEmail(c, req.Email)
 
 	if err != nil {
 		return nil, err
@@ -46,7 +41,7 @@ func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*mod
 		return nil, errors.New("email already exists")
 	}
 
-	exists, err = s.Repository.FindUserByName(ctx, req.Username)
+	exists, err = s.Repository.FindUserByName(c, req.Username)
 
 	if err != nil {
 		return nil, err
@@ -67,7 +62,7 @@ func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*mod
 		Password: hashedPassword,
 	}
 
-	r, err := s.Repository.CreateUser(ctx, u)
+	r, err := s.Repository.CreateUser(c, u)
 
 	if err != nil {
 		return nil, err
@@ -82,10 +77,8 @@ func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*mod
 }
 
 func (s *service) Login(c context.Context, req *models.LoginUserReq) (*models.LoginUserRes, error) {
-	ctx, cancel := context.WithTimeout(c, s.timeout)
-	defer cancel()
 
-	u, err := s.Repository.GetUserByEmail(ctx, req.Email)
+	u, err := s.Repository.GetUserByEmail(c, req.Email)
 	if err != nil {
 		return &models.LoginUserRes{}, errors.New("invalid credentials")
 	}

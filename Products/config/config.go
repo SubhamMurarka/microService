@@ -1,15 +1,15 @@
 package config
 
 import (
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
-	PostgresHost      string
-	PostgresPort      string
-	PostgresUser      string
-	PostgresPassword  string
-	PostgresDatabase  string
+	MongoHost         string
+	MongoPort         string
 	ServerPortProduct string
 	ServerPortUser    string
 	KafkaHost         string
@@ -20,13 +20,14 @@ type AppConfig struct {
 var Config AppConfig
 
 func init() {
+	err := godotenv.Load("/home/murarka/microService/Products/config.env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	Config = AppConfig{
 		ServerPortProduct: os.Getenv("SERVER_PORT_PRODUCT"),
-		PostgresHost:      os.Getenv("POSTGRES_HOST"),
-		PostgresPort:      os.Getenv("POSTGRES_PORT"),
-		PostgresUser:      os.Getenv("POSTGRES_USER"),
-		PostgresPassword:  os.Getenv("POSTGRES_PASSWORD"),
-		PostgresDatabase:  os.Getenv("POSTGRES_DATABASE"),
+		MongoHost:         os.Getenv("MONGO_HOST"),
+		MongoPort:         os.Getenv("MONGO_PORT"),
 		KafkaHost:         os.Getenv("KAFKA_HOST"),
 		KafkaPort:         os.Getenv("KAFKA_PORT"),
 		KafkaTopic:        os.Getenv("KAFKA_TOPIC"),

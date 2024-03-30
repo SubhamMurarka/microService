@@ -5,6 +5,7 @@ go 1.21.0
 require (
 	github.com/IBM/sarama v1.43.1
 	github.com/golang-migrate/migrate/v4 v4.17.0
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 )
 

@@ -2,6 +2,7 @@ package pay_repo
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SubhamMurarka/microService/Payment/db"
 	"github.com/SubhamMurarka/microService/Payment/models"
@@ -16,16 +17,18 @@ func NewRepository(db db.DBTX) Repository {
 }
 
 type Repository interface {
-	CreatePayment(ctx context.Context, payment *models.Payment) (int, error)
+	CreatePayment(ctx context.Context, payment *models.Payment) error
 }
 
-func (r *repository) CreatePayment(ctx context.Context, payment *models.Payment) (int, error) {
+func (r *repository) CreatePayment(ctx context.Context, payment *models.Payment) error {
 	var lastInsertId int
 	query := "INSERT INTO payments(user_id, product_id) VALUES ($1, $2) returning id"
-	err := r.db.QueryRowContext(ctx, query, payment.UserID, payment.ProductID).Scan(&lastInsertId)
-	if err != nil {
-		return -1, err
+	for _, productID := range payment.ProductID {
+		err := r.db.QueryRowContext(ctx, query, payment.UserID, productID).Scan(&lastInsertId)
+		if err != nil {
+			return err
+		}
+		fmt.Println(lastInsertId)
 	}
-	lastInsertId = int(lastInsertId)
-	return lastInsertId, nil
+	return nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/SubhamMurarka/microService/Products/kafka"
 	"github.com/SubhamMurarka/microService/Products/models"
@@ -13,32 +12,35 @@ import (
 
 type service struct {
 	prod_repo.Repository
-	timeout time.Duration
 }
 
 type Service interface {
-	CreateProduct(ctx context.Context, product *models.Product) (*models.Product, error)
+	CreateProduct(ctx context.Context, CreateProduct *models.CreateProduct) (*models.Product, error)
 	GetProduct(ctx context.Context, id string) (*models.Product, error)
-	UpdateProduct(ctx context.Context, id string, product *models.Product) error
+	UpdateProduct(ctx context.Context, id string, product *models.CreateProduct) error
 	DeleteProduct(ctx context.Context, id string) error
-	GetAllProducts(ctx context.Context, page int) ([]*models.Product, error)
-	Purchase(ctx context.Context, req *models.PurchaseReq) (string, error)
+	GetAllProducts(ctx context.Context, page int) ([]models.Product, error)
+	Purchase(ctx context.Context, req *models.KafkaEvent) (string, error)
 }
 
 func NewService(repository prod_repo.Repository) Service {
 	return &service{
 		repository,
-		time.Duration(8) * time.Second,
 	}
 }
 
 const defualtPageSize = 10
 
-func (s *service) CreateProduct(ctx context.Context, product *models.Product) (*models.Product, error) {
-	if product == nil {
+func (s *service) CreateProduct(ctx context.Context, CreateProduct *models.CreateProduct) (*models.Product, error) {
+	if CreateProduct == nil {
 		return nil, errors.New("invalid product")
 	}
-	return s.Repository.CreateProduct(ctx, product)
+	Product, err := s.Repository.CreateProduct(ctx, CreateProduct)
+	if err != nil {
+		fmt.Println("cannot create", err)
+		return nil, err
+	}
+	return Product, nil
 }
 
 func (s *service) GetProduct(ctx context.Context, id string) (*models.Product, error) {
@@ -48,7 +50,7 @@ func (s *service) GetProduct(ctx context.Context, id string) (*models.Product, e
 	return s.Repository.GetProduct(ctx, id)
 }
 
-func (s *service) UpdateProduct(ctx context.Context, id string, product *models.Product) error {
+func (s *service) UpdateProduct(ctx context.Context, id string, product *models.CreateProduct) error {
 	if id == "" || product == nil {
 		return errors.New("invalid product ID or nil product")
 	}
@@ -62,15 +64,23 @@ func (s *service) DeleteProduct(ctx context.Context, id string) error {
 	return s.Repository.DeleteProduct(ctx, id)
 }
 
-func (s *service) GetAllProducts(ctx context.Context, page int) ([]*models.Product, error) {
+func (s *service) GetAllProducts(ctx context.Context, page int) ([]models.Product, error) {
 	if page < 1 {
 		return nil, errors.New("invalid page or pageSize")
 	}
 	pageSize := defualtPageSize
-	return s.Repository.GetAllProducts(ctx, page, pageSize)
+	var product []models.Product
+	var err error
+	product, err = s.Repository.GetAllProducts(ctx, page, pageSize)
+	if err != nil {
+		fmt.Println("error fetching all data : ", err)
+		return nil, err
+	}
+
+	return product, err
 }
 
-func (s *service) Purchase(ctx context.Context, req *models.PurchaseReq) (string, error) {
+func (s *service) Purchase(ctx context.Context, req *models.KafkaEvent) (string, error) {
 	err := kafka.InitProducer()
 
 	defer kafka.CloseKafka()

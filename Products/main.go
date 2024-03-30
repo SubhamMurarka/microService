@@ -17,7 +17,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	repo := prod_repo.NewMongoRepository(mongoDB.DB, "items")
 	prodSvc := prod_service.NewService(repo)
 	ProductHandler := prod_handler.NewHandler(prodSvc)

@@ -46,7 +46,7 @@ func InitProducer() error {
 	return nil
 }
 
-func PublishMessage(message *models.PurchaseReq) error {
+func PublishMessage(message *models.KafkaEvent) error {
 	messageBytes, err := json.Marshal(message)
 	if err != nil {
 		log.Println("Error marshalling message:", err)

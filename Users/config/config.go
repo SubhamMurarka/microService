@@ -1,7 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
@@ -16,6 +19,11 @@ type AppConfig struct {
 var Config AppConfig
 
 func init() {
+	err := godotenv.Load("/home/murarka/microService/Users/config.env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	Config = AppConfig{
 		JwtSecret:      os.Getenv("JWT_SECRET"),
 		ServerPortUser: os.Getenv("SERVER_PORT_USER"),

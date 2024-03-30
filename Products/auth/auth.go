@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 
@@ -20,26 +19,29 @@ var Authres AuthRes
 
 func Authorise(c *fiber.Ctx) error {
 	token := c.Get("token")
-
 	if token == "" {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "No token present"})
 	}
 
 	port := config.Config.ServerPortUser
-
-	url := "http://localhost:" + port + "/auth?" + token
+	url := "http://localhost:" + port + "/auth?token=" + token
 
 	res, err := http.Get(url)
-
-	log.Fatal("error in authorisation : ", err)
-	responsebyte, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatal("error reading the response body : ", err)
+		log.Printf("Error while calling authentication service: %v", err)
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"error": "Failed to authenticate token"})
 	}
-	err = json.Unmarshal(responsebyte, &Authres)
-	if err != nil {
-		log.Fatal("error marshalling the response : ", err)
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		log.Printf("Authentication service returned status: %s", res.Status)
+		return c.Status(http.StatusUnauthorized).JSON("try to login again")
 	}
 
-	return nil
+	if err := json.NewDecoder(res.Body).Decode(&Authres); err != nil {
+		log.Printf("Error decoding authentication response: %v", err)
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.Next()
 }

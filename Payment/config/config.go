@@ -1,7 +1,10 @@
 package config
 
 import (
+	"log"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
@@ -18,6 +21,10 @@ type AppConfig struct {
 var Config AppConfig
 
 func init() {
+	err := godotenv.Load("/home/murarka/microService/Payment/config.env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	Config = AppConfig{
 		PostgresHost:     os.Getenv("POSTGRES_HOST"),
 		PostgresPort:     os.Getenv("POSTGRES_PORT"),

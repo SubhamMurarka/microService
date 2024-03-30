@@ -26,16 +26,13 @@ var cfg MongoConfig
 
 func init() {
 	cfg = MongoConfig{
-		Host:     config.Config.PostgresHost,
-		Password: config.Config.PostgresPassword,
-		Port:     config.Config.PostgresPort,
-		User:     config.Config.PostgresUser,
-		Database: config.Config.PostgresDatabase,
+		Host: config.Config.MongoHost,
+		Port: config.Config.MongoPort,
 	}
 }
 
 func NewDatabase() (*MongoDB, error) {
-	URI := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Database)
+	URI := fmt.Sprintf("mongodb://%s:%s", cfg.Host, cfg.Port)
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(URI))
 	if err != nil {
 		return nil, err

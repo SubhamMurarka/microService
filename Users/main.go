@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 
@@ -9,9 +10,10 @@ import (
 	"github.com/SubhamMurarka/microService/Users/user_handler"
 	"github.com/SubhamMurarka/microService/Users/user_repo"
 	"github.com/SubhamMurarka/microService/Users/user_service"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/mysql"
+	"github.com/golang-migrate/migrate/v4/database/mysql"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
@@ -21,11 +23,16 @@ func main() {
 		log.Fatalf("could not initialiaze database connection: %s", err)
 	}
 
+	err = dbConn.DB.Ping()
+	if err != nil {
+		fmt.Println("connection is not setup ", err)
+	}
+
 	defer dbConn.Close()
 
-	runDBMigration()
+	runDBMigration(dbConn.DB)
 
-	Rep := user_repo.NewRepository(dbConn.GetDB())
+	Rep := user_repo.NewRepository(dbConn.DB)
 	userSvc := user_service.NewService(Rep)
 	userHandler := user_handler.NewHandler(userSvc)
 
@@ -40,13 +47,12 @@ func main() {
 	}
 }
 
-func runDBMigration() {
-	dsn := fmt.Sprintf("mysql://root:%s@tcp(%s:%s)/%s", config.Config.MysqlPassword, config.Config.MysqlHost, config.Config.MysqlPort, config.Config.MysqlDatabase)
-	migrationsPath := "file://db/migrations"
-
-	m, err := migrate.New(
-		dsn,
-		migrationsPath,
+func runDBMigration(db *sql.DB) {
+	driver, _ := mysql.WithInstance(db, &mysql.Config{})
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://db/migrations",
+		"mysql",
+		driver,
 	)
 	if err != nil {
 		log.Fatal("cannot create new migrate instance", err)
