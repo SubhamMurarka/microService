@@ -13,6 +13,8 @@ RUN go mod download
 # Copy the source code into the container.
 COPY . .
 
+WORKDIR /app
+
 # Build the application.
 RUN go build -o main .
 
