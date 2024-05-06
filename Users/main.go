@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/SubhamMurarka/microService/Users/config"
@@ -20,12 +19,11 @@ import (
 func main() {
 	dbConn, err := db.NewDatabase()
 	if err != nil {
-		log.Fatalf("could not initialiaze database connection: %s", err)
+		log.Fatalf("Could not initialize database connection: %s", err)
 	}
 
-	err = dbConn.DB.Ping()
-	if err != nil {
-		fmt.Println("connection is not setup ", err)
+	if err = dbConn.DB.Ping(); err != nil {
+		log.Fatalf("Database connection is not set up: %s", err)
 	}
 
 	defer dbConn.Close()
@@ -43,23 +41,27 @@ func main() {
 	port := ":" + config.Config.ServerPortUser
 
 	if err = app.Listen(port); err != nil {
-		panic(err)
+		log.Fatalf("Error starting server: %s", err)
 	}
 }
 
 func runDBMigration(db *sql.DB) {
-	driver, _ := mysql.WithInstance(db, &mysql.Config{})
+	driver, err := mysql.WithInstance(db, &mysql.Config{})
+	if err != nil {
+		log.Fatalf("Failed to create migration driver: %s", err)
+	}
+
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://db/migrations",
 		"mysql",
 		driver,
 	)
 	if err != nil {
-		log.Fatal("cannot create new migrate instance", err)
+		log.Fatalf("Cannot create migrate instance: %s", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal("unable to migrate up ", err)
+		log.Fatalf("Failed to apply database migration: %s", err)
 	}
 
 	log.Println("DB migrated successfully")

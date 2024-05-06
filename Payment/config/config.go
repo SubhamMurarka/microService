@@ -1,13 +1,13 @@
 package config
 
 import (
-	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type AppConfig struct {
+	MongoHost        string
+	MongoPort        string
+	ServerPortUser   string
 	PostgresHost     string
 	PostgresPort     string
 	PostgresPassword string
@@ -20,11 +20,10 @@ type AppConfig struct {
 var Config AppConfig
 
 func init() {
-	err := godotenv.Load("/home/murarka/microService/Payment/config.env")
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 	Config = AppConfig{
+		MongoHost:        os.Getenv("MONGO_HOST"),
+		MongoPort:        os.Getenv("MONGO_PORT"),
+		ServerPortUser:   os.Getenv("SERVER_PORT_USER"),
 		PostgresHost:     os.Getenv("POSTGRES_HOST"),
 		PostgresPort:     os.Getenv("POSTGRES_PORT"),
 		PostgresPassword: os.Getenv("POSTGRES_PASSWORD"),
@@ -34,12 +33,3 @@ func init() {
 		KafkaTopic:       os.Getenv("KAFKA_TOPIC"),
 	}
 }
-
-// if no value is provided will return fallback value for that variable
-
-// func getEnv(key string, fallback string) string {
-// 	if value, exists := os.LookupEnv(key); exists {
-// 		return value
-// 	}
-// 	return fallback
-// }
