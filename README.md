@@ -71,7 +71,7 @@ Ensure you have the following installed:
 Once the services are up and running, you can interact with them through their respective endpoints.
 
 - **User Service:** Manage user signup and login.
-- **Product Service:** Perform CRUD operations on products and view the list of products.
-- **Payment Service:** Handle payment processing triggered by product updates.
+- **Product Service:** Perform CRUD operations on products and view the list of products and buy products as well.
+- **Payment Service:** Handle payment processing triggered by product purchase.
 
 This README provides a comprehensive overview of the Golang microservice project, including setup instructions, service descriptions, and usage guidelines. Enjoy working with this microservice architecture!
