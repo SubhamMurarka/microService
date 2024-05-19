@@ -1,13 +1,22 @@
 package util
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/SubhamMurarka/microService/Users/config"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrEmptyFields        = errors.New("email and username cannot be empty")
+	ErrEmailExists        = errors.New("email already exists")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrTryLoginAgain      = errors.New("try to login again")
 )
 
 type tokenCreateParams struct {
@@ -50,4 +59,14 @@ func HashPassword(password string) (string, error) {
 
 func CheckPassword(password string, hashedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
+
+func EncodeSuccessResponse(data interface{}) fiber.Map {
+	return fiber.Map{"data": data}
+}
+
+func EncodeErrorResponse(err error) fiber.Map {
+	return fiber.Map{
+		"error": err.Error(),
+	}
 }

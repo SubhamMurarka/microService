@@ -37,7 +37,6 @@ func main() {
 	app := fiber.New()
 	app.Post("/signup", userHandler.CreateUser)
 	app.Post("/login", userHandler.Login)
-	app.Get("/auth", user_handler.Authorise)
 	port := ":" + config.Config.ServerPortUser
 
 	if err = app.Listen(port); err != nil {

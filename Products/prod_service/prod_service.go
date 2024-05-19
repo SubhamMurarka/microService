@@ -2,12 +2,12 @@ package prod_service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/SubhamMurarka/microService/Products/kafka"
 	"github.com/SubhamMurarka/microService/Products/models"
 	"github.com/SubhamMurarka/microService/Products/prod_repo"
+	"github.com/SubhamMurarka/microService/Products/utils"
 )
 
 type service struct {
@@ -19,7 +19,7 @@ type Service interface {
 	GetProduct(ctx context.Context, id string) (*models.Product, error)
 	UpdateProduct(ctx context.Context, id string, product *models.CreateProduct) error
 	DeleteProduct(ctx context.Context, id string) error
-	GetAllProducts(ctx context.Context, page int) ([]models.Product, error)
+	GetAllProducts(ctx context.Context, page int, pageSize int) ([]models.Product, error)
 	Purchase(ctx context.Context, req *models.KafkaEvent) (string, error)
 }
 
@@ -29,15 +29,13 @@ func NewService(repository prod_repo.Repository) Service {
 	}
 }
 
-const defualtPageSize = 10
-
 func (s *service) CreateProduct(ctx context.Context, CreateProduct *models.CreateProduct) (*models.Product, error) {
-	if CreateProduct == nil {
-		return nil, errors.New("invalid product")
+	if CreateProduct.Name == "" || CreateProduct.Price == "" {
+		return nil, utils.ErrEmptyFields
 	}
 	Product, err := s.Repository.CreateProduct(ctx, CreateProduct)
 	if err != nil {
-		fmt.Println("cannot create", err)
+		fmt.Println("Cannot create product: ", err)
 		return nil, err
 	}
 	return Product, nil
@@ -45,56 +43,64 @@ func (s *service) CreateProduct(ctx context.Context, CreateProduct *models.Creat
 
 func (s *service) GetProduct(ctx context.Context, id string) (*models.Product, error) {
 	if id == "" {
-		return nil, errors.New("empty product id")
+		return nil, utils.ErrEmptyProductID
 	}
-	return s.Repository.GetProduct(ctx, id)
+	product, err := s.Repository.GetProduct(ctx, id)
+	if err != nil {
+		fmt.Println("Cannot fetch product: ", err)
+		return nil, err
+	}
+	return product, nil
 }
 
 func (s *service) UpdateProduct(ctx context.Context, id string, product *models.CreateProduct) error {
-	if id == "" || product == nil {
-		return errors.New("invalid product ID or nil product")
+	if id == "" || product.Name == "" || product.Price == "" {
+		return utils.ErrEmptyFields
 	}
-	return s.Repository.UpdateProduct(ctx, id, product)
+	err := s.Repository.UpdateProduct(ctx, id, product)
+	if err != nil {
+		fmt.Println("Cannot update product: ", err)
+	}
+	return err
 }
 
 func (s *service) DeleteProduct(ctx context.Context, id string) error {
 	if id == "" {
-		return errors.New("empty product ID")
+		return utils.ErrEmptyProductID
 	}
-	return s.Repository.DeleteProduct(ctx, id)
+	err := s.Repository.DeleteProduct(ctx, id)
+	if err != nil {
+		fmt.Println("Cannot delete product: ", err)
+	}
+	return err
 }
 
-func (s *service) GetAllProducts(ctx context.Context, page int) ([]models.Product, error) {
-	if page < 1 {
-		return nil, errors.New("invalid page or pageSize")
-	}
-	pageSize := defualtPageSize
-	var product []models.Product
-	var err error
-	product, err = s.Repository.GetAllProducts(ctx, page, pageSize)
+func (s *service) GetAllProducts(ctx context.Context, page int, pageSize int) ([]models.Product, error) {
+	products, err := s.Repository.GetAllProducts(ctx, page, pageSize)
 	if err != nil {
-		fmt.Println("error fetching all data : ", err)
+		fmt.Println("Error fetching all products: ", err)
 		return nil, err
 	}
-
-	return product, err
+	return products, nil
 }
 
 func (s *service) Purchase(ctx context.Context, req *models.KafkaEvent) (string, error) {
-	err := kafka.InitProducer()
-
-	defer kafka.CloseKafka()
-
-	if err != nil {
-		fmt.Println("error initialising producer", err)
-		return "cannot process the Payment", err
+	if req.UserID == "" || len(req.ProductID) == 0 {
+		return "", utils.ErrPurchaseReq
 	}
+
+	err := kafka.InitProducer()
+	if err != nil {
+		fmt.Println("Error initializing producer: ", err)
+		return "", err
+	}
+	defer kafka.CloseKafka()
 
 	err = kafka.PublishMessage(req)
 	if err != nil {
-		fmt.Println("error in publishing message", err)
-		return "cannot process the Payment", err
+		fmt.Println("Error publishing message: ", err)
+		return "", err
 	}
 
-	return "Payment successfully Done", nil
+	return "Payment successfully done", nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -25,20 +24,28 @@ import (
 func main() {
 	dbConn, err := db.NewDatabase()
 	if err != nil {
-		log.Fatalf("could not initialiaze database connection: %s", err)
+		log.Fatalf("could not initialize database connection: %s", err)
 	}
-
 	defer dbConn.Close()
 
 	runDBMigration(dbConn.DB)
 	repo := pay_repo.NewRepository(dbConn.DB)
 
-	consumer, _ := kafka.ConnectConsumer()
-	PartitionConsumer, err := consumer.ConsumePartition(config.Config.KafkaTopic, 0, sarama.OffsetNewest)
+	consumer, err := kafka.ConnectConsumer()
 	if err != nil {
-		log.Fatalf("PartitionConsumer not created : %s", err)
-
+		log.Fatalf("failed to connect to Kafka: %v", err)
 	}
+	defer func() {
+		if err := consumer.Close(); err != nil {
+			log.Printf("error closing the consumer: %v", err)
+		}
+	}()
+
+	partitionConsumer, err := consumer.ConsumePartition(config.Config.KafkaTopic, 0, sarama.OffsetNewest)
+	if err != nil {
+		log.Fatalf("failed to start partition consumer: %v", err)
+	}
+
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
@@ -47,50 +54,45 @@ func main() {
 	go func() {
 		for {
 			select {
-			case err := <-PartitionConsumer.Errors():
-				fmt.Println(err)
-			case msg := <-PartitionConsumer.Messages():
+			case err := <-partitionConsumer.Errors():
+				log.Printf("error from partition consumer: %v", err)
+			case msg := <-partitionConsumer.Messages():
 				msgCount++
-				fmt.Printf("Received message Count %d: | Topic(%s) | Message(%s) \n", msgCount, string(msg.Topic), string(msg.Value))
+				log.Printf("received message count %d: | Topic(%s) | Message(%s)\n", msgCount, string(msg.Topic), string(msg.Value))
 				var payment models.Payment
 				if err := json.Unmarshal(msg.Value, &payment); err != nil {
-					fmt.Println("Error parsing message:", err)
+					log.Printf("error parsing message: %v", err)
 					continue
 				}
-				if err := repo.CreatePayment(context.TODO(), &payment); err != nil {
-					fmt.Println("Error writing to database:", err)
+				if err := repo.CreatePayment(context.Background(), &payment); err != nil {
+					log.Printf("error writing to database: %v", err)
 					continue
 				}
 			case <-sigchan:
-				fmt.Println("Interrupt is detected")
+				log.Println("interrupt detected")
 				doneCh <- struct{}{}
 			}
 		}
 	}()
 
 	<-doneCh
-	fmt.Println("Processed", msgCount, "messages")
-
-	err = consumer.Close()
-	if err != nil {
-		fmt.Println("error closing the consumer : ", err)
-	}
+	log.Printf("processed %d messages", msgCount)
 }
 
 func runDBMigration(db *sql.DB) {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		log.Fatal("error creating instance : ", err)
+		log.Fatalf("error creating instance: %v", err)
 	}
 	m, err := migrate.NewWithDatabaseInstance(
 		"file://db/migration",
 		"postgres", driver)
 	if err != nil {
-		log.Fatal("cannot create new migrate instance", err)
+		log.Fatalf("cannot create new migrate instance: %v", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatal("unable to migrate up ", err)
+		log.Fatalf("unable to migrate up: %v", err)
 	}
 
 	log.Println("DB migrated successfully")

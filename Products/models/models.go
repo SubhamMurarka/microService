@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -24,4 +25,11 @@ type PurchaseReq struct {
 type KafkaEvent struct {
 	UserID    string   `json:"user_id"`
 	ProductID []string `json:"product_id"`
+}
+
+type TokenCreateParams struct {
+	Username string
+	Email    string
+	UserID   string
+	jwt.StandardClaims
 }

@@ -33,38 +33,24 @@ services:
       MYSQL_PASSWORD: pswd
       MYSQL_DATABASE: users
       JWT_SECRET: SECRET_KEY
-      MONGO_HOST: mongodb
-      MONGO_PORT: 27017
       SERVER_PORT_USER: 8080
-      KAFKA_HOST: kafka
-      KAFKA_PORT: 9092
-      KAFKA_TOPIC: user_events
     depends_on:
       mysql:
         condition: service_healthy
-      mongodb:
-        condition: service_started
-      kafka:
-        condition: service_started
-
+    
   products_service:
     build: ./Products
     ports:
       - "8082:8082"
     environment:
       SERVER_PORT_PRODUCT: 8082
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_PASSWORD: password
-      POSTGRES_DATABASE: products
+      SERVER_PORT_USER: 8080
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
       KAFKA_HOST: kafka
       KAFKA_PORT: 9092
-      KAFKA_TOPIC: product_events
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_started
+      KAFKA_TOPIC: payment
+      JWT_SECRET: SECRET_KEY
 
   payment_service:
     build: ./Payment
@@ -73,11 +59,11 @@ services:
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: pswd
       POSTGRES_DATABASE: payment
       KAFKA_HOST: kafka
       KAFKA_PORT: 9092
-      KAFKA_TOPIC: payment_events
+      KAFKA_TOPIC: payment
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,12 +71,10 @@ services:
         condition: service_started
 
   mysql:
-    image: mysql:5.7
+    image: mysql:latest
     environment:
       MYSQL_ROOT_PASSWORD: pswd
       MYSQL_DATABASE: users
-      MYSQL_USER: myappuser
-      MYSQL_PASSWORD: pswd
     ports:
       - "3306:3306"
     healthcheck:
@@ -103,8 +87,8 @@ services:
   postgres:
     image: postgres:latest
     environment:
+      POSTGRES_PASSWORD: pswd
       POSTGRES_DB: payment
-      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     healthcheck:

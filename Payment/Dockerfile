@@ -1,4 +1,4 @@
-# Dockerfile for payment service
+# Dockerfile for products service
 FROM golang:1.21.0-alpine
 
 # Set the working directory inside the container.

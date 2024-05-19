@@ -5,7 +5,7 @@ go 1.21.0
 require (
 	github.com/IBM/sarama v1.43.1
 	github.com/gofiber/fiber/v2 v2.52.4
-	github.com/joho/godotenv v1.5.1
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	go.mongodb.org/mongo-driver v1.14.0
 )
 

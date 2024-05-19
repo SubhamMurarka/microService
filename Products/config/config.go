@@ -8,7 +8,6 @@ type AppConfig struct {
 	MongoHost         string
 	MongoPort         string
 	ServerPortProduct string
-	ServerPortUser    string
 	PostgresHost      string
 	PostgresPort      string
 	PostgresPassword  string
@@ -16,6 +15,7 @@ type AppConfig struct {
 	KafkaHost         string
 	KafkaPort         string
 	KafkaTopic        string
+	JwtSecret         string
 }
 
 var Config AppConfig
@@ -25,7 +25,6 @@ func init() {
 		MongoHost:         os.Getenv("MONGO_HOST"),
 		MongoPort:         os.Getenv("MONGO_PORT"),
 		ServerPortProduct: os.Getenv("SERVER_PORT_PRODUCT"),
-		ServerPortUser:    os.Getenv("SERVER_PORT_USER"),
 		PostgresHost:      os.Getenv("POSTGRES_HOST"),
 		PostgresPort:      os.Getenv("POSTGRES_PORT"),
 		PostgresPassword:  os.Getenv("POSTGRES_PASSWORD"),
@@ -33,5 +32,6 @@ func init() {
 		KafkaHost:         os.Getenv("KAFKA_HOST"),
 		KafkaPort:         os.Getenv("KAFKA_PORT"),
 		KafkaTopic:        os.Getenv("KAFKA_TOPIC"),
+		JwtSecret:         os.Getenv("JWT_SECRET"),
 	}
 }

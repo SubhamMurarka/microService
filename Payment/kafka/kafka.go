@@ -2,6 +2,8 @@ package kafka
 
 import (
 	"fmt"
+	"log"
+	"time"
 
 	"github.com/IBM/sarama"
 	"github.com/SubhamMurarka/microService/Payment/config"
@@ -30,9 +32,21 @@ func ConnectConsumer() (sarama.Consumer, error) {
 	brokerUrl = append(brokerUrl, url)
 	config := sarama.NewConfig()
 	config.Consumer.Return.Errors = true
-	conn, err := sarama.NewConsumer(brokerUrl, config)
+
+	var conn sarama.Consumer
+	var err error
+
+	for retries := 10; retries > 0; retries-- {
+		conn, err = sarama.NewConsumer(brokerUrl, config)
+		if err == nil {
+			break
+		}
+		log.Printf("error creating Kafka consumer, retrying: %v", err)
+		time.Sleep(10 * time.Second)
+	}
+
 	if err != nil {
-		fmt.Println("not able to create new consumer : ", err)
+		log.Printf("not able to create new consumer after retries: %v", err)
 		return nil, err
 	}
 

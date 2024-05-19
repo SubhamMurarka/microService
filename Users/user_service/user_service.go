@@ -2,7 +2,7 @@ package user_service
 
 import (
 	"context"
-	"errors"
+	"database/sql"
 	"strconv"
 
 	"github.com/SubhamMurarka/microService/Users/models"
@@ -28,27 +28,17 @@ func NewService(repository user_repo.Repository) Service {
 func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*models.CreateUserRes, error) {
 
 	if req.Email == "" || req.Username == "" {
-		return nil, errors.New("email and username cannot be empty")
+		return nil, util.ErrEmptyFields
 	}
 
-	exists, err := s.Repository.FindUserByEmail(c, req.Email)
+	u, err := s.Repository.GetUserByEmail(c, req.Email)
 
-	if err != nil {
+	if u != nil {
+		return nil, util.ErrEmailExists
+	}
+
+	if err != nil && err != sql.ErrNoRows {
 		return nil, err
-	}
-
-	if exists {
-		return nil, errors.New("email already exists")
-	}
-
-	exists, err = s.Repository.FindUserByName(c, req.Username)
-
-	if err != nil {
-		return nil, err
-	}
-
-	if exists {
-		return nil, errors.New("username already exists")
 	}
 
 	hashedPassword, err := util.HashPassword(req.Password)
@@ -56,14 +46,13 @@ func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*mod
 		return nil, err
 	}
 
-	u := &models.User{
+	user := &models.User{
 		Username: req.Username,
 		Email:    req.Email,
 		Password: hashedPassword,
 	}
 
-	r, err := s.Repository.CreateUser(c, u)
-
+	r, err := s.Repository.CreateUser(c, user)
 	if err != nil {
 		return nil, err
 	}
@@ -77,21 +66,22 @@ func (s *service) CreateUser(c context.Context, req *models.CreateUserReq) (*mod
 }
 
 func (s *service) Login(c context.Context, req *models.LoginUserReq) (*models.LoginUserRes, error) {
-
 	u, err := s.Repository.GetUserByEmail(c, req.Email)
 	if err != nil {
-		return &models.LoginUserRes{}, errors.New("invalid credentials")
+		if err == sql.ErrNoRows {
+			return nil, util.ErrInvalidCredentials
+		}
+		return nil, err
 	}
 
 	err = util.CheckPassword(req.Password, u.Password)
 	if err != nil {
-		return &models.LoginUserRes{}, errors.New("invalid credentials")
+		return nil, util.ErrInvalidCredentials
 	}
 
 	token, err := util.GenerateAllTokens(strconv.FormatInt(u.ID, 10), u.Username, u.Email)
-
 	if err != nil {
-		return &models.LoginUserRes{}, errors.New("try to login again")
+		return nil, err
 	}
 
 	logRes := &models.LoginUserRes{
