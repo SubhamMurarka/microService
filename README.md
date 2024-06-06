@@ -14,6 +14,11 @@ Check out the demo video to see the microservice in action:
 
 The entire microservice architecture is built using Go, a statically typed, compiled programming language designed for simplicity and efficiency.
 
+### Framework
+![Fiber](https://img.shields.io/badge/Fiber-00ADD8?style=for-the-badge&logo=go-fiber&logoColor=white)
+
+All microservices use the Fiber framework, an Express-inspired web framework built on Fasthttp, for handling HTTP requests efficiently.
+
 ### Databases
 
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
