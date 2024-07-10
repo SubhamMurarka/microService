@@ -7,6 +7,10 @@ A simple yet powerful microservice architecture built using Golang. This project
 Check out the demo video to see the microservice in action:
 [Screencast from 31-03-24 01:42:31 AM IST.webm](https://github.com/SubhamMurarka/microService/assets/108292932/4e1e57eb-9f4c-4c4c-8bd2-3a0b1be26da3)
 
+## Code Explanation
+
+https://www.loom.com/share/a1b12d50c45d4e01856ec1a52243e0e4
+
 ## Tech Stack
 
 ### Language
